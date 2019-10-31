@@ -16,4 +16,4 @@ Click the column header to sort items.
 
 ## Search
 This tool has a search field for filtering textures.
-<img src = "images/this_tool_has_a_item.png">
+<img src = "images/this_tool_has_a_search_field.png">
