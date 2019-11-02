@@ -39,7 +39,7 @@ namespace TextureTool
             l => l.TextureByteLength, // Data Size
         };
 
-        public static void TreeToList(TreeViewItem root, IList<TreeViewItem> result)
+        public void TreeToList(TreeViewItem root, IList<TreeViewItem> result)
         {
             if (root == null)
                 throw new NullReferenceException("root");
@@ -53,11 +53,15 @@ namespace TextureTool
 
             Stack<TreeViewItem> stack = new Stack<TreeViewItem>();
             for (int i = root.children.Count - 1; i >= 0; i--)
+            {
                 stack.Push(root.children[i]);
+            }
 
+            //var searchStrings = (multiColumnHeader.state as TextureColumnHeaderState).SearchStrings;
             while (stack.Count > 0)
             {
-                TreeViewItem current = stack.Pop();
+                TextureTreeViewItem current = stack.Pop() as TextureTreeViewItem;
+                //if (!current.data.DoesItemMatchSearch(searchStrings)) continue; // 検索にマッチしない場合はスキップ
                 result.Add(current);
 
                 if (current.hasChildren && current.children[0] != null)
@@ -77,7 +81,7 @@ namespace TextureTool
 
         private void SortIfNeeded(TreeViewItem root, IList<TreeViewItem> rows)
         {
-            if (rows.Count <= 1)
+            if (rows.Count() <= 1)
                 return;
 
             if (multiColumnHeader.sortedColumnIndex == -1)
@@ -99,9 +103,10 @@ namespace TextureTool
             if (sortedColumns.Length == 0)
                 return;
 
-            var children = rootItem.children
+            var searchStrings = (multiColumnHeader.state as TextureColumnHeaderState).SearchStrings;
+            var children = GetRows() // 現在TreeViewに表示されている行を取得(rootItem.childrenを使うと全行が取得されてしまうので注意)
                 .Cast<TextureTreeViewItem>()
-                .Where(l => l != null && l.data.Texture != null && l.data.TextureImporter != null)
+                .Where(l => l.data.DoesItemMatchSearch(searchStrings))
                 .ToArray();
 
             var orderedQuery = InitialOrder(children, sortedColumns);
@@ -114,7 +119,9 @@ namespace TextureTool
                 orderedQuery = orderedQuery.ThenBy(l => sortSelector(l.data), ascending);
             }
 
-            rootItem.children = orderedQuery.Cast<TreeViewItem>().ToList();
+            rootItem.children = orderedQuery
+                .Cast<TreeViewItem>()
+                .ToList();
         }
 
         private IOrderedEnumerable<TextureTreeViewItem> InitialOrder(IEnumerable<TextureTreeViewItem> elements, int[] history)

@@ -13,11 +13,14 @@ namespace TextureTool
      ***********************************************************************************/
     internal static class MyStyle
     {
+        public static GUIStyle DefaultLabel => EditorStyles.label;
         public static GUIStyle YellowLabel { get; private set; } // 黄色いラベル
         public static GUIStyle RedLabel { get; private set; } // 赤いラベル
         public static GUIStyle LoadingLabel { get; private set; } // ローディング表示ラベル
         public static GUIStyle MessageLabel { get; private set; } // ローディング表示ラベル
         public static GUIStyle TreeViewColumnHeader { get; private set; } // TreeViewのヘッダー
+        public static GUIStyle ColumnHeader { get; private set; }
+
         public static readonly Vector2 LoadingLabelPosition = new Vector2(14f, -8f); // ラベル位置
 
         /** ********************************************************************************

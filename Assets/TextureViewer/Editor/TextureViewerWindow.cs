@@ -21,14 +21,18 @@ namespace TextureTool
             GUILayout.ExpandHeight(true)
         };
 
-        [SerializeField] private TreeViewState treeViewState = null; // TreeViewの状態
-        [SerializeField] private string searchText = ""; // 検索文字
-        [SerializeField] private Texture2D[] textures = new Texture2D[0]; // ロードしたテクスチャ
-        [SerializeField] private TextureImporter[] textureImporters = new TextureImporter[0];
-
-        private TextureTreeView treeView = null; // TreeView
+        [SerializeField] private TextureTreeViewState treeViewState = null; // TreeViewの状態
+        [SerializeField] private TextureColumnHeaderState headerState = null; // TreeViewの状態
+        [SerializeField] private string searchString = "HOGE"; // 検索文字
+        [SerializeField] private string[] columnSearchStrings = new string[0]; // 検索文字(列)
+        [System.NonSerialized] private Texture2D[] textures = new Texture2D[0]; // ロードしたテクスチャ
+        [System.NonSerialized] private TextureImporter[] textureImporters = new TextureImporter[0];
+        private TextureTreeView treeView = null; // TreeView 
         private SearchField searchField = null; // 検索窓
-        private ECreateMode createMode = ECreateMode.None;
+
+        [SerializeField] MultiColumnHeaderState columnHeaderState;
+        private bool isLoadingTexture = false;
+        private bool isCreatingTreeView = false;
 
         /** ********************************************************************************
         * @summary ウィンドウを開く
@@ -40,11 +44,11 @@ namespace TextureTool
             window.titleContent = ToolConfig.WindowTitle;
 
             var position = window.position;
-            position.width = TextureTreeView.InitialHeaderTotalWidth + 50f;
+            position.width = ToolConfig.InitialHeaderTotalWidth + 50f;
             position.height = 400f;
             window.position = position;
 
-            window.CreateTreeView(ECreateMode.Create); // 起動直後にTreeView作成
+            window.CreateTreeView(); // 起動直後にTreeView作成
         }
 
         /** ********************************************************************************
@@ -53,29 +57,16 @@ namespace TextureTool
         private void OnGUI()
         {
             MyStyle.CreateGUIStyleIfNull();
+            if (treeView == null)
+            {
+                CreateTreeView();
+            }
 
             DrawHeader();
             DrawTreeView();
 
-            switch (createMode)
-            {
-                case ECreateMode.Create:
-                    if (treeView != null) 
-                    {
-                        createMode = ECreateMode.None;
-                    }
-                    break;
-                case ECreateMode.Load:
-                    if (treeView != null && treeView.IsInitialized) 
-                    {
-                        createMode = ECreateMode.None; 
-                    }
-                    break;
-                default:
-                    break;
-            }
         }
-        
+
         /** ********************************************************************************
         * @summary TreeViewなどの描画
         ***********************************************************************************/
@@ -83,33 +74,28 @@ namespace TextureTool
         {
             var rect = EditorGUILayout.GetControlRect(false, GUILayout.ExpandHeight(true));
 
-            switch (createMode)
+            if (isCreatingTreeView)
             {
-                case ECreateMode.Create:
-                    {
-                        EditorGUI.BeginDisabledGroup(true);
-                        treeView?.OnGUI(rect);
-                        EditorGUI.EndDisabledGroup();
+                EditorGUI.BeginDisabledGroup(true);
+                treeView?.OnGUI(rect);
+                EditorGUI.EndDisabledGroup();
 
-                        rect.position += MyStyle.LoadingLabelPosition;
-                        EditorGUI.LabelField(rect, ToolConfig.CreatingMessage, MyStyle.LoadingLabel);
-                    }
-                    break;
-                case ECreateMode.Load:
-                    {
-                        EditorGUI.BeginDisabledGroup(true);
-                        treeView?.OnGUI(rect);
-                        EditorGUI.EndDisabledGroup();
+                rect.position += MyStyle.LoadingLabelPosition;
+                EditorGUI.LabelField(rect, ToolConfig.CreatingMessage, MyStyle.LoadingLabel);
+            }
+            else
+            if (isLoadingTexture)
+            {
+                EditorGUI.BeginDisabledGroup(true);
+                treeView?.OnGUI(rect);
+                EditorGUI.EndDisabledGroup();
 
-                        rect.position += MyStyle.LoadingLabelPosition;
-                        EditorGUI.LabelField(rect, ToolConfig.LoadingMessage, MyStyle.LoadingLabel);
-                    }
-                    break;
-                default:
-                    {
-                        treeView?.OnGUI(rect);
-                    }
-                    break;
+                rect.position += MyStyle.LoadingLabelPosition;
+                EditorGUI.LabelField(rect, ToolConfig.LoadingMessage, MyStyle.LoadingLabel);
+            }
+            else
+            {
+                treeView?.OnGUI(rect);
             }
         }
 
@@ -124,56 +110,66 @@ namespace TextureTool
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 GUI.backgroundColor = Color.green;
-                if (GUILayout.Button("Reload", EditorStyles.toolbarButton))
-                {
-                    ReloadTexture();
-                    CreateTreeView(ECreateMode.Load);
-                }
+                DrawReloadButton();
+
+                //EditorGUILayout.LabelField(treeView.ElementCount.ToString());
+
                 GUI.backgroundColor = defaultColor;
 
                 GUILayout.Space(100);
 
                 GUILayout.FlexibleSpace();
-
-                EditorGUI.BeginChangeCheck();
-                searchText = searchField?.OnToolbarGUI(searchText, GUILayout.MaxWidth(280f));
-                if (EditorGUI.EndChangeCheck())
-                {
-                    if (treeView != null)
-                    {
-                        // TreeView.searchStringに検索文字列を入れると表示するItemを絞ってくれる
-                        treeView.searchString = searchText;
-                    }
-                }
             }
 
             GUI.backgroundColor = defaultColor;
         }
 
         /** ********************************************************************************
+        * @summary リロードボタン
+        ***********************************************************************************/
+        private void DrawReloadButton()
+        {
+            if (GUILayout.Button("Reload", EditorStyles.toolbarButton))
+            {
+                CreateTreeView();
+                ReloadTexture();
+                treeView.SetTexture(textures, textureImporters);
+                treeView.Reload(); // Reloadを呼ぶとBuildRootが実行され、次にBuildRowsが実行されます。
+
+                EditorApplication.delayCall += () => treeView.searchString = searchString;
+            }
+        }
+
+        /** ********************************************************************************
         * @summary TreeViewの更新
         ***********************************************************************************/
-        private void CreateTreeView(ECreateMode mode)
+        private void CreateTreeView()
         {
-            if (createMode != ECreateMode.None) { return; } // 作成中なら無視する
-
-            createMode = mode;
-            if (treeView != null)
-            {
-                treeView?.Clean();
-                Repaint();
-            }
+            if (treeView != null) { return; }
+            if (isCreatingTreeView) { return; }
+            isCreatingTreeView = true;
+            Repaint();
 
             EditorApplication.delayCall += () =>
             {
+                if (columnSearchStrings.Length != ToolConfig.HeaderColumnNum)
+                {
+                    columnSearchStrings = new string[ToolConfig.HeaderColumnNum];
+                }
+
+                treeViewState = treeViewState ?? new TextureTreeViewState();
+                headerState = headerState ?? new TextureColumnHeaderState(ToolConfig.HeaderColumns, columnSearchStrings);
+
                 // TreeView作成
-                treeViewState = treeViewState ?? new TreeViewState();
-                treeView = treeView ?? new TextureTreeView(treeViewState);
-                treeView.Setup(textures, textureImporters);
+                treeView = treeView ?? new TextureTreeView(treeViewState, headerState);
+                treeView.searchString = TextureTreeView.defaultSearchString;
+                treeView.Reload(); // Reloadを呼ぶとBuildRootが実行され、次にBuildRowsが実行されます。
 
                 // SearchFieldを初期化
                 searchField = new SearchField();
                 searchField.downOrUpArrowKeyPressed += treeView.SetFocusAndEnsureSelectedItem;
+
+                isCreatingTreeView = false;
             };
         }
 
@@ -185,7 +181,7 @@ namespace TextureTool
             for (int i = 0; i < directories.Length; i++)
             {
                 var directory = directories[i];
-                if (directory[directory.Length - 1] == '/') 
+                if (directory[directory.Length - 1] == '/')
                 {
                     directory = directory.Substring(0, directory.Length - 1);
                 }
@@ -193,8 +189,8 @@ namespace TextureTool
 
             var paths = AssetDatabase.FindAssets(filter, directories)
                 .Select(x => AssetDatabase.GUIDToAssetPath(x))
-                .Where(x => !string.IsNullOrEmpty(x)) 
-                .OrderBy(x => x); 
+                .Where(x => !string.IsNullOrEmpty(x))
+                .OrderBy(x => x);
 
             return paths;
         }
@@ -216,6 +212,10 @@ namespace TextureTool
         ***********************************************************************************/
         public void ReloadTexture()
         {
+            if (isLoadingTexture) { return; }
+
+            Debug.Log("ReloadTexture");
+            isLoadingTexture = true;
             CustomUI.DisplayProgressLoadTexture();
 
             // 指定ディレクトリからテクスチャロード
@@ -236,13 +236,9 @@ namespace TextureTool
             textureImporters = importerList.ToArray();
 
             EditorUtility.ClearProgressBar();
-        }
+            Debug.Log(textures.Length);
 
-        public enum ECreateMode
-        {
-            None,
-            Create,
-            Load,
+            isLoadingTexture = false;
         }
     }
 }

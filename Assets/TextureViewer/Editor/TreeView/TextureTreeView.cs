@@ -9,28 +9,17 @@ namespace TextureTool
     using UnityEditor;
     using UnityEditor.IMGUI.Controls;
     using UnityEngine;
+    using System.Reflection;
 
     /** ********************************************************************************
      * @summary テクスチャツール用TreeView
      ***********************************************************************************/
     internal partial class TextureTreeView : TreeView
     {
-        public static float InitialHeaderTotalWidth 
-        {
-            get
-            {
-                float width = 0f;
-                for (int i = 0; i < headerColumns.Length; i++)
-                {
-                    width += headerColumns[i].width;
-                }
-                return width;
-            }
-        }
-
-        private static readonly TextAnchor fieldLabelAnchor = TextAnchor.MiddleLeft; 
-        private const int yellowDataSize = ToolConfig.YellowDataSize; 
-        private const int redDataSize = ToolConfig.RedDataSize; 
+        public static readonly string defaultSearchString = "HOGE";
+        private static readonly TextAnchor fieldLabelAnchor = TextAnchor.MiddleLeft;
+        private const int yellowDataSize = ToolConfig.YellowDataSize;
+        private const int redDataSize = ToolConfig.RedDataSize;
         private const int yellowTextureSize = ToolConfig.YellowDataSize;
         private const int redTextureSize = ToolConfig.RedTextureSize;
         private const int redMaxTextureSize = ToolConfig.RedMaxTextureSize;
@@ -38,35 +27,31 @@ namespace TextureTool
         private Texture2D prefabIconTexture = null; // Prefabアイコン
         private TextureTreeElement[] baseElements = new TextureTreeElement[0]; // TreeViewで描画する要素
 
-        // TreeViewのヘッダー定義
-        static readonly TextureColumn[] headerColumns = new[] {
-            new TextureColumn("Texture", 180f), // 0
-            new TextureColumn("Texture Type", 105f), // 1
-            new TextureColumn("Non Power of 2", 105f), // 2
-            new TextureColumn("Max Size", 70f), // 3
-            new TextureColumn("Generate\nMip Maps", 70f), // 4
-            new TextureColumn("Alpha is\nTransparency", 96f), // 5
-            new TextureColumn("Texture Size", 105f), // 6
-            new TextureColumn("Data Size", 80f), // 7
-        };
-
         public bool IsInitialized => isInitialized;
         public bool IsEmpty => baseElements.Length == 0;
         public int ElementCount => baseElements.Length;
 
-        private static readonly TreeViewItem DummyTreeViewItem = new TreeViewItem { id = -999, depth = 0, displayName = "なし" };
-        private static readonly List<TreeViewItem> DummyTreeViewList = new List<TreeViewItem> { DummyTreeViewItem };
+        //private static readonly TreeViewItem EmptyMessagItem = new TreeViewItem { id = 0, depth = 0, displayName = "なり" };
 
         /** ********************************************************************************
         * @summary コンストラクタ
         ***********************************************************************************/
-        public TextureTreeView(TreeViewState state)
-        : base(new TreeViewState(), new TextureColumnHeader(new MultiColumnHeaderState(headerColumns)))
+        public TextureTreeView(TextureTreeViewState state, TextureColumnHeaderState headerState)
+        //: base(state, new TextureColumnHeader(new TextureColumnHeaderState(headerColumns)))
+        //: base(state, new TextureColumnHeader(headerState))
+        : base(new TextureTreeViewState(), new TextureColumnHeader(headerState))
         {
             showAlternatingRowBackgrounds = true; // 背景のシマシマを表示
             showBorder = true; // 境界線を表示
 
-            multiColumnHeader.sortingChanged += OnSortingChanged; // ソート変化時の処理を登録
+            var textureColumnHeader = multiColumnHeader as TextureColumnHeader;
+            textureColumnHeader.sortingChanged += OnSortingChanged; // ソート変化時の処理を登録
+            textureColumnHeader.searchChanged += CallSearchChanged; // 列の検索が変化したときの処理を登録
+
+            foreach (var searchField in headerState.SearchFields)
+            {
+                searchField.searchChanged += () => CallSearchChanged("");
+            }
         }
 
         /** ********************************************************************************
@@ -87,11 +72,11 @@ namespace TextureTool
                 return;
             }
 
+            //GUIStyle labelStyle = EditorStyles.label;
             GUIStyle labelStyle = EditorStyles.label;
-
-            switch (columnIndex)
+            switch ((EHeaderColumnId)columnIndex)
             {
-                case (int)EHeaderColumnId.TextureName:
+                case EHeaderColumnId.TextureName:
                     rect.x += 2f;
 
                     // アイコンを描画する
@@ -105,60 +90,10 @@ namespace TextureTool
                     labelRect.x += toggleRect.width;
                     EditorGUI.LabelField(labelRect, args.label);
                     break;
-                case (int)EHeaderColumnId.TextureType: // TextureType
-                    EditorGUI.LabelField(rect, textureImporter.textureType.ToString());
-                    break;
-                case (int)EHeaderColumnId.NPot: // Non power of 2
-                    if (textureImporter.npotScale == TextureImporterNPOTScale.None)
-                    {
-                        labelStyle = MyStyle.RedLabel;
-                    }
-                    EditorGUI.LabelField(rect, textureImporter.npotScale.ToString(), labelStyle);
-                    break;
-                case (int)EHeaderColumnId.MaxSize: // Max size
-                    if (textureImporter.maxTextureSize > redMaxTextureSize)
-                    {
-                        labelStyle = MyStyle.RedLabel;
-                    }
-                    EditorGUI.LabelField(rect, textureImporter.maxTextureSize.ToString(), labelStyle);
-                    break;
-                case (int)EHeaderColumnId.GenerateMips: // Generate mip maps
-                    if (textureImporter.mipmapEnabled == true)
-                    {
-                        labelStyle = MyStyle.RedLabel;
-                    }
-                    EditorGUI.LabelField(rect, textureImporter.mipmapEnabled.ToString(), labelStyle);
-                    break;
-                case (int)EHeaderColumnId.AlphaIsTransparency: // Alpha is Transparency
-                    EditorGUI.LabelField(rect, textureImporter.alphaIsTransparency.ToString());
-                    break;
-                case (int)EHeaderColumnId.TextureSize: // Texture Size
-                    switch ((element.Texture.width, element.Texture.height))
-                    {
-                        case var values when values.width > redTextureSize || values.height > redTextureSize:
-                            labelStyle = MyStyle.RedLabel;
-                            break;
-                        case var values when values.width > yellowTextureSize || values.height > yellowTextureSize:
-                            labelStyle = MyStyle.YellowLabel;
-                            break;
-                    }
-                    EditorGUI.LabelField(rect, $"{element.Texture.width}x{element.Texture.height}", labelStyle);
-                    break;
-                case (int)EHeaderColumnId.DataSize: // データサイズ
-                    switch ((int)element.TextureByteLength)
-                    {
-                        case int len when len > redDataSize:
-                            labelStyle = MyStyle.RedLabel;
-                            break;
-                        case int len when len > yellowDataSize:
-                            labelStyle = MyStyle.YellowLabel;
-                            break;
-                        default:
-                            break;
-                    }
-                    EditorGUI.LabelField(rect, element.TextureDataSizeText, labelStyle);
-                    //EditorGUI.LabelField(rect, element.TextureByteLength.ToString(), labelStyle);
-
+                default:
+                    var text = element.GetDisplayText((EHeaderColumnId)columnIndex);
+                    var style = element.GetLabelStyle((EHeaderColumnId)columnIndex);
+                    EditorGUI.LabelField(rect, text, style);
                     break;
             }
         }
@@ -203,7 +138,8 @@ namespace TextureTool
             base.SelectionChanged(selectedIds);
             if (selectedIds.Count == 0) { return; }
 
-            selectedIds = selectedIds.Distinct().ToArray();
+            //selectedIds = selectedIds.Distinct().ToArray();
+
             Object[] objects = new Object[selectedIds.Count];
             for (int i = 0; i < selectedIds.Count; i++)
             {
@@ -257,33 +193,69 @@ namespace TextureTool
         }
 
         /** ********************************************************************************
+        * @summary 検索にヒットするかどうか
+        ***********************************************************************************/
+        protected override bool DoesItemMatchSearch(TreeViewItem item, string search)
+        {
+            //if (!string.IsNullOrEmpty(search) && !base.DoesItemMatchSearch(item, search))
+            //{
+            //    return false;
+            //}
+
+            // 列に入力された検索文字をつかって絞り込み
+            var textureItem = item as TextureTreeViewItem;
+            var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
+            return textureItem.data.DoesItemMatchSearch(textureHeaderState.SearchStrings);
+        }
+
+        /** ********************************************************************************
+        * @summary 検索文字列が入力されているかどうか
+        ***********************************************************************************/
+        new bool hasSearch
+        {
+            get
+            {
+                //if (!string.IsNullOrEmpty(searchString)) { return true; }
+
+                var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
+                for (int i = 0; i < ToolConfig.HeaderColumnNum; i++)
+                {
+                    if (!string.IsNullOrEmpty(textureHeaderState.SearchStrings[i])) { return true; }
+                }
+                return false;
+            }
+        }
+
+        /** ********************************************************************************
         * @summary 列の作成
         * @note    BuildRows()で返されたIListを元にしてTreeView上で描画が実行されます。
         ***********************************************************************************/
         protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
         {
-            var rows = base.BuildRows(root); // TreeView.BuildRowsの内部では検索による絞り込みを行っている
-            if (hasSearch && rows.Count == 0) // 検索ヒットなし
-            {
-                return DummyTreeViewList;
-            }
+            // 現在のRowsを取得
+            var rows = GetRows() ?? new List<TreeViewItem>();
+            rows.Clear();
+
+            var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
+            var columnSearchStrings = textureHeaderState.SearchStrings;
 
             //　TreeViewItemの親子関係を構築
             var elements = new List<TreeViewItem>();
-
-            CustomUI.RowCount = baseElements.Count();
             foreach (var baseElement in baseElements)
             {
                 var baseItem = CreateTreeViewItem(baseElement) as TextureTreeViewItem;
                 baseItem.data = baseElement; // 要素を紐づける
 
-                root.AddChild(baseItem);
-                rows.Add(baseItem); // 列に追加
+                // 検索にヒットする場合は追加
+                if (DoesItemMatchSearch(baseItem, searchString))
+                {
+                    root.AddChild(baseItem);
+                    rows.Add(baseItem); // 列に追加
+                }
             }
 
             // 親子関係に基づいてDepthを自動設定するメソッド
             SetupDepthsFromParentsAndChildren(root);
-
             return rows;
         }
 
@@ -308,7 +280,7 @@ namespace TextureTool
         /** ********************************************************************************
         * @summary TreeView初期化
         ***********************************************************************************/
-        public void Setup(Texture2D[] textures, TextureImporter[] importers)
+        public void SetTexture(Texture2D[] textures, TextureImporter[] importers)
         {
             // TreeViewの要素を作成
             baseElements = new TextureTreeElement[textures.Length];
@@ -330,8 +302,6 @@ namespace TextureTool
                 element.Index = i;
                 element.UpdateDataSize();
             }
-
-            Reload(); // Reloadを呼ぶとBuildRootが実行され、次にBuildRowsが実行されます。
         }
 
         /** ********************************************************************************
@@ -355,6 +325,40 @@ namespace TextureTool
 
                 DrawRowColumn(args, rect, columnIndex);
             }
+        }
+
+        /** ********************************************************************************
+         * @summary 検索文字列が変化したことをTreeViewに教える
+         ***********************************************************************************/
+        public void CallSearchChanged(string newString)
+        {
+            searchString = newString;
+            searchString = defaultSearchString;
+
+            //Debug.Log("CallSearchChanged : searchString=" + searchString);
+
+            //// TreeViewController m_TreeView
+            //var m_TreeView = typeof(TreeView)
+            //    .GetField("m_TreeView", BindingFlags.NonPublic | BindingFlags.Instance)
+            //    .GetValue(this);
+            //Debug.Log(m_TreeView);
+
+            //// public ITreeViewDataSource data { get; set; }
+            //var data = m_TreeView.GetType()
+            //    .GetProperty("data", BindingFlags.Public | BindingFlags.Instance)
+            //    .GetValue(m_TreeView);
+            //Debug.Log(data);
+
+            //// void OnSearchChanged();
+            //MethodInfo OnSearchChanged = data.GetType()
+            //    .GetMethod("OnSearchChanged", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod);
+            //Debug.Log(OnSearchChanged);
+
+            //OnSearchChanged.Invoke(data, new object[0]);
+
+            //System.Action<string> searchChanged = m_TreeView.GetType()
+            //    .GetField("searchChanged", BindingFlags.NonPublic | BindingFlags.Instance)
+            //    .GetValue(m_TreeView) as System.Action<string>;
         }
     }
 }
