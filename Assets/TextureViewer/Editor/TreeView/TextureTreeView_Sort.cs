@@ -103,10 +103,12 @@ namespace TextureTool
             if (sortedColumns.Length == 0)
                 return;
 
-            var searchStrings = (multiColumnHeader.state as TextureColumnHeaderState).SearchStrings;
+            //var searchStrings = (multiColumnHeader.state as TextureColumnHeaderState).SearchStrings;
+            var searchStates = (multiColumnHeader.state as TextureColumnHeaderState).SearchStates;
             var children = GetRows() // 現在TreeViewに表示されている行を取得(rootItem.childrenを使うと全行が取得されてしまうので注意)
                 .Cast<TextureTreeViewItem>()
-                .Where(l => l.data.DoesItemMatchSearch(searchStrings))
+                //.Where(l => l.data.DoesItemMatchSearch(searchStrings))
+                .Where(l => l.data.DoesItemMatchSearch(searchStates))
                 .ToArray();
 
             var orderedQuery = InitialOrder(children, sortedColumns);

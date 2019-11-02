@@ -50,7 +50,8 @@ namespace TextureTool
 
             foreach (var searchField in headerState.SearchFields)
             {
-                searchField.searchChanged += () => CallSearchChanged("");
+                //searchField.searchChanged += () => CallSearchChanged("");
+                searchField.searchChanged += CallSearchChanged;
             }
         }
 
@@ -205,7 +206,7 @@ namespace TextureTool
             // 列に入力された検索文字をつかって絞り込み
             var textureItem = item as TextureTreeViewItem;
             var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
-            return textureItem.data.DoesItemMatchSearch(textureHeaderState.SearchStrings);
+            return textureItem.data.DoesItemMatchSearch(textureHeaderState.SearchStates);
         }
 
         /** ********************************************************************************
@@ -220,7 +221,8 @@ namespace TextureTool
                 var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
                 for (int i = 0; i < ToolConfig.HeaderColumnNum; i++)
                 {
-                    if (!string.IsNullOrEmpty(textureHeaderState.SearchStrings[i])) { return true; }
+                    if (!textureHeaderState.SearchStates[i].HasValue) { return true; }
+                    //if (!string.IsNullOrEmpty(textureHeaderState.SearchStrings[i])) { return true; }
                 }
                 return false;
             }
@@ -236,8 +238,8 @@ namespace TextureTool
             var rows = GetRows() ?? new List<TreeViewItem>();
             rows.Clear();
 
-            var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
-            var columnSearchStrings = textureHeaderState.SearchStrings;
+            //var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
+            //var columnSearchStrings = textureHeaderState.SearchStrings;
 
             //　TreeViewItemの親子関係を構築
             var elements = new List<TreeViewItem>();
@@ -330,9 +332,9 @@ namespace TextureTool
         /** ********************************************************************************
          * @summary 検索文字列が変化したことをTreeViewに教える
          ***********************************************************************************/
-        public void CallSearchChanged(string newString)
+        public void CallSearchChanged()
         {
-            searchString = newString;
+            searchString = "";
             searchString = defaultSearchString;
 
             //Debug.Log("CallSearchChanged : searchString=" + searchString);

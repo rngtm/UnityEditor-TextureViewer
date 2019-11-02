@@ -91,6 +91,34 @@ namespace TextureTool
         }
 
         /** ********************************************************************************
+        * @summary TreeView上で表示するデータ取得
+        ***********************************************************************************/
+        public object GetDisplayData(EHeaderColumnId id)
+        {
+            switch (id)
+            {
+                case EHeaderColumnId.TextureName:
+                    return Texture.name;
+                case EHeaderColumnId.TextureType:
+                    return TextureImporter.textureType;
+                case EHeaderColumnId.NPot:
+                    return TextureImporter.npotScale;
+                case EHeaderColumnId.MaxSize:
+                    return TextureImporter.maxTextureSize;
+                case EHeaderColumnId.GenerateMips:
+                    return TextureImporter.mipmapEnabled;
+                case EHeaderColumnId.AlphaIsTransparency:
+                    return TextureImporter.alphaIsTransparency;
+                case EHeaderColumnId.TextureSize:
+                    return new Vector2Int(Texture.width, Texture.height);
+                case EHeaderColumnId.DataSize:
+                    return TextureByteLength;
+                default:
+                    return -1;
+            }
+        }
+
+        /** ********************************************************************************
         * @summary TreeView上で表示するテキスト取得
         ***********************************************************************************/
         public string GetDisplayText(EHeaderColumnId id)
@@ -158,11 +186,12 @@ namespace TextureTool
         /** ********************************************************************************
         * @summary 列に設定された検索文字を利用して検索にヒットするかの判定
         ***********************************************************************************/
-        public bool DoesItemMatchSearch(string[] columnSearchStrings)
+        //public bool DoesItemMatchSearch(string[] columnSearchStrings)
+        public bool DoesItemMatchSearch(SearchState[] searchState)
         {
             for (int columnIndex = 0; columnIndex < ToolConfig.HeaderColumnNum; columnIndex++)
             {
-                if (!DoesItemMatchSearchInternal(columnSearchStrings, columnIndex))
+                if (!DoesItemMatchSearchInternal(searchState, columnIndex))
                 {
                     return false;
                 }
@@ -174,21 +203,15 @@ namespace TextureTool
         /** ********************************************************************************
         * @summary 列に設定された検索文字を利用して検索にヒットするかの判定
         ***********************************************************************************/
-        private bool DoesItemMatchSearchInternal(string[] columnSearchStrings, int columnIndex)
+        private bool DoesItemMatchSearchInternal(SearchState[] searchStates, int columnIndex)
         {
-            if (string.IsNullOrEmpty(columnSearchStrings[columnIndex])) { return true; }
+            var searchState = searchStates[columnIndex];
+            if (!searchState.HasValue) { return true; }
 
-            string displayText = GetDisplayText((EHeaderColumnId)columnIndex);
-            if (string.IsNullOrEmpty(displayText)) { return true; }
+            //string displayText = GetDisplayText((EHeaderColumnId)columnIndex);
+            //if (string.IsNullOrEmpty(displayText)) { return true; }
 
-            string searchString = columnSearchStrings[columnIndex];
-            if (string.IsNullOrEmpty(searchString)) { return true; }
-
-            return displayText.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0;
-            //int sIndex = displayText.IndexOf(searchString, StringComparison.OrdinalIgnoreCase);
-            //bool match = sIndex >= 0;
-            //Debug.Log($"sIndex:{sIndex}\n(searchString, displayText):{searchString}, {displayText}");
-            //return match;
+            return searchState.DoesItemMatch((EHeaderColumnId)columnIndex, this);
         }
     }
 }

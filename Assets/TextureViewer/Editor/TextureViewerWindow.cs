@@ -24,7 +24,8 @@ namespace TextureTool
         [SerializeField] private TextureTreeViewState treeViewState = null; // TreeViewの状態
         [SerializeField] private TextureColumnHeaderState headerState = null; // TreeViewの状態
         [SerializeField] private string searchString = "HOGE"; // 検索文字
-        [SerializeField] private string[] columnSearchStrings = new string[0]; // 検索文字(列)
+        //[SerializeField] private string[] columnSearchStrings = new string[0]; // 検索文字(列)
+        [SerializeField] private SearchState[] columnSearchStates = new SearchState[0]  ; // 検索状態 (列)
         [System.NonSerialized] private Texture2D[] textures = new Texture2D[0]; // ロードしたテクスチャ
         [System.NonSerialized] private TextureImporter[] textureImporters = new TextureImporter[0];
         private TextureTreeView treeView = null; // TreeView 
@@ -111,9 +112,6 @@ namespace TextureTool
             {
                 GUI.backgroundColor = Color.green;
                 DrawReloadButton();
-
-                //EditorGUILayout.LabelField(treeView.ElementCount.ToString());
-
                 GUI.backgroundColor = defaultColor;
 
                 GUILayout.Space(100);
@@ -129,6 +127,8 @@ namespace TextureTool
         ***********************************************************************************/
         private void DrawReloadButton()
         {
+            if (treeView == null) { return; }
+
             if (GUILayout.Button("Reload", EditorStyles.toolbarButton))
             {
                 CreateTreeView();
@@ -152,13 +152,18 @@ namespace TextureTool
 
             EditorApplication.delayCall += () =>
             {
-                if (columnSearchStrings.Length != ToolConfig.HeaderColumnNum)
+                if (columnSearchStates == null || columnSearchStates.Length != ToolConfig.HeaderColumnNum)
                 {
-                    columnSearchStrings = new string[ToolConfig.HeaderColumnNum];
+                    columnSearchStates = new SearchState[ToolConfig.HeaderColumnNum];
+                    for (int i = 0; i < ToolConfig.HeaderColumnNum; i++)
+                    {
+                        columnSearchStates[i] = new SearchState();
+                    }
                 }
 
+
                 treeViewState = treeViewState ?? new TextureTreeViewState();
-                headerState = headerState ?? new TextureColumnHeaderState(ToolConfig.HeaderColumns, columnSearchStrings);
+                headerState = headerState ?? new TextureColumnHeaderState(ToolConfig.HeaderColumns, columnSearchStates);
 
                 // TreeView作成
                 treeView = treeView ?? new TextureTreeView(treeViewState, headerState);
