@@ -214,7 +214,6 @@ namespace TextureTool
         {
             if (isLoadingTexture) { return; }
 
-            Debug.Log("ReloadTexture");
             isLoadingTexture = true;
             CustomUI.DisplayProgressLoadTexture();
 
@@ -236,7 +235,6 @@ namespace TextureTool
             textureImporters = importerList.ToArray();
 
             EditorUtility.ClearProgressBar();
-            Debug.Log(textures.Length);
 
             isLoadingTexture = false;
         }

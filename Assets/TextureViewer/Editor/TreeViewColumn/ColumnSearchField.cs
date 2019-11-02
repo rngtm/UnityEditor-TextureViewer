@@ -10,6 +10,5 @@ namespace TextureTool
     {
         public System.Action searchChanged { get; set; }
         public SearchField SearchField { get; private set; } = new SearchField();
-
     }
 }
