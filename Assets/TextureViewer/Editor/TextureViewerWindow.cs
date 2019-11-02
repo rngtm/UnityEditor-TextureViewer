@@ -22,9 +22,7 @@ namespace TextureTool
         };
 
         [SerializeField] private TextureTreeViewState treeViewState = null; // TreeViewの状態
-        [SerializeField] private TextureColumnHeaderState headerState = null; // TreeViewの状態
-        [SerializeField] private string searchString = "HOGE"; // 検索文字
-        //[SerializeField] private string[] columnSearchStrings = new string[0]; // 検索文字(列)
+        [SerializeField] private TextureColumnHeaderState headerState = null; // TreeViewヘッダー状態
         [SerializeField] private SearchState[] columnSearchStates = new SearchState[0]  ; // 検索状態 (列)
         [System.NonSerialized] private Texture2D[] textures = new Texture2D[0]; // ロードしたテクスチャ
         [System.NonSerialized] private TextureImporter[] textureImporters = new TextureImporter[0];
@@ -133,10 +131,14 @@ namespace TextureTool
             {
                 CreateTreeView();
                 ReloadTexture();
+
+                headerState.ResetSearch();
+
                 treeView.SetTexture(textures, textureImporters);
                 treeView.Reload(); // Reloadを呼ぶとBuildRootが実行され、次にBuildRowsが実行されます。
 
-                EditorApplication.delayCall += () => treeView.searchString = searchString;
+
+                EditorApplication.delayCall += () => treeView.searchString = TextureTreeView.defaultSearchString;
             }
         }
 
@@ -164,6 +166,7 @@ namespace TextureTool
 
                 treeViewState = treeViewState ?? new TextureTreeViewState();
                 headerState = headerState ?? new TextureColumnHeaderState(ToolConfig.HeaderColumns, columnSearchStates);
+                headerState.ResetSearch();
 
                 // TreeView作成
                 treeView = treeView ?? new TextureTreeView(treeViewState, headerState);

@@ -57,11 +57,9 @@ namespace TextureTool
                 stack.Push(root.children[i]);
             }
 
-            //var searchStrings = (multiColumnHeader.state as TextureColumnHeaderState).SearchStrings;
             while (stack.Count > 0)
             {
                 TextureTreeViewItem current = stack.Pop() as TextureTreeViewItem;
-                //if (!current.data.DoesItemMatchSearch(searchStrings)) continue; // 検索にマッチしない場合はスキップ
                 result.Add(current);
 
                 if (current.hasChildren && current.children[0] != null)

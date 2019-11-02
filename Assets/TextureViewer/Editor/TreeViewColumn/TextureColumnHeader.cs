@@ -13,11 +13,11 @@ namespace TextureTool
     ***********************************************************************************/
     internal class TextureColumnHeader : MultiColumnHeader
     {
-        private const float searchY = 2f; // 検索ボックス すき間 上
-        private const float searchMarginLeft = 4f; // 検索ボックス すき間 左
-        private const float searchMarginRight = 4f; // 検索ボックス すき間 右
-        private const float searchHeight = 14f; // 検索ボックス サイズ
-        private const float searchSpace = 0f; // 検索ボックスとソートボタンの間のすき間
+        private const float searchY = 4f; // 検索ボックス すき間 上
+        private const float searchMarginLeft = 3f; // 検索ボックス すき間 左
+        private const float searchMarginRight = 6f; // 検索ボックス すき間 右
+        private const float searchHeight = 17f; // 検索ボックス サイズ
+        private const float searchSpace = 4f; // 検索ボックスとソートボタンの間のすき間
         private const float sortHeight = labelHeight + sortSpace; // ソートボタン 高さ
         private const float sortSpace = 6f; // ソート上部とラベルの間のすき間
         private const float labelHeight = 32f; // ラベル 高さ
@@ -46,20 +46,9 @@ namespace TextureTool
             searchRect.width -= searchMarginLeft + searchMarginRight;
             searchRect.x += searchMarginLeft;
 
-            //EditorGUI.BeginChangeCheck();
-            //string s = textureState.SearchStrings[columnIndex];
-            //s = searchField.SearchField.OnToolbarGUI(searchRect, s);
-            //if (EditorGUI.EndChangeCheck()) // 検索文字が変化
-            //{
-            //    textureState.SearchStrings[columnIndex] = s;
-            //    searchChanged?.Invoke(s);
-            //    searchField.searchChanged?.Invoke();
-            //}
-
             EditorGUI.BeginChangeCheck();
             var headerState = state as TextureColumnHeaderState;
             var searchField = headerState.SearchFields[columnIndex];
-            //var searchState = headerState.SearchStates[columnIndex];
             searchField.OnGUI(searchRect, headerState, columnIndex);
             if (EditorGUI.EndChangeCheck())
             {

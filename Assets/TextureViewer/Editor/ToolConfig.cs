@@ -6,24 +6,35 @@ namespace TextureTool
 {
     using UnityEngine;
     
+    internal static class SizeUnits    
+    {
+        public const ulong B = 1;
+        public const ulong KB = 1024 * B;
+        public const ulong MB = 1024 * KB;
+        public const ulong GB = 1024 * MB;
+        public const ulong TB = 1024 * GB;
+    }
+    
     /** ********************************************************************************
     * @summary ツール設定
     ***********************************************************************************/
     internal static class ToolConfig
     {
-        public readonly static string[] TargetDirectories = new string[] { "Assets" };  // テクスチャ読み込み対象のディレクトリ
+        // テクスチャ読み込み対象のディレクトリ
+        public readonly static string[] TargetDirectories = new string[] { "Assets" };  
 
+        // テキスト
         public readonly static string ProgressTitle = "テクスチャ表示ウィンドウを初期化しています";
         public readonly static string CreatingMessage = "Creating...";
         public readonly static string LoadingMessage = "Loading...";
 
-        public readonly static GUIContent WindowTitle = new GUIContent("Texture Viewer");
+        // ウィンドウタイトル
+        public readonly static GUIContent WindowTitle = new GUIContent("Texture Viewer"); 
 
-        public const int MB = 1024 * 1024; // メガバイト
-        public const int YellowDataSize = 2 * MB; // データサイズがこれを超えたら黄色で警告
+        public const int MB = 1024 * 1024; 
         public const int RedDataSize = 3 * MB; // データサイズがこれを超えたら赤で警告
-        public const int YellowTextureSize = 2048; // テクスチャサイズがこれを超えたら黄色で警告
-        public const int RedTextureSize = 4096; // テクスチャサイズがこれを超えたら黄色で警告
+        public const int YellowTextureSize = 2000; // テクスチャサイズがこれを超えたら黄色で警告
+        public const int RedTextureSize = 4000; // テクスチャサイズがこれを超えたら黄色で警告
         public const int RedMaxTextureSize = 2048; // max texture sizeがこれを超えたら赤で警告
 
         // TreeViewのヘッダーの数

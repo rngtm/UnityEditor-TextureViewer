@@ -44,13 +44,14 @@ namespace TextureTool
             if (YellowLabel == null)
             {
                 YellowLabel = new GUIStyle(EditorStyles.label);
-                YellowLabel.normal.textColor = Color.yellow;
+                YellowLabel.normal.textColor = new Color(1f, 0.35f, 0f);
             }
 
             if (RedLabel == null)
             {
                 RedLabel = new GUIStyle(EditorStyles.label);
-                RedLabel.normal.textColor = new Color(1f, 0.1f, 0f);
+                RedLabel.normal.textColor = new Color(1f, 0f, 0f);
+                //RedLabel.fontStyle = FontStyle.Bold;
             }
 
             if (TreeViewColumnHeader == null)

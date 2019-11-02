@@ -18,11 +18,6 @@ namespace TextureTool
     {
         public static readonly string defaultSearchString = "HOGE";
         private static readonly TextAnchor fieldLabelAnchor = TextAnchor.MiddleLeft;
-        private const int yellowDataSize = ToolConfig.YellowDataSize;
-        private const int redDataSize = ToolConfig.RedDataSize;
-        private const int yellowTextureSize = ToolConfig.YellowDataSize;
-        private const int redTextureSize = ToolConfig.RedTextureSize;
-        private const int redMaxTextureSize = ToolConfig.RedMaxTextureSize;
 
         private Texture2D prefabIconTexture = null; // Prefabアイコン
         private TextureTreeElement[] baseElements = new TextureTreeElement[0]; // TreeViewで描画する要素
@@ -31,14 +26,10 @@ namespace TextureTool
         public bool IsEmpty => baseElements.Length == 0;
         public int ElementCount => baseElements.Length;
 
-        //private static readonly TreeViewItem EmptyMessagItem = new TreeViewItem { id = 0, depth = 0, displayName = "なり" };
-
         /** ********************************************************************************
         * @summary コンストラクタ
         ***********************************************************************************/
         public TextureTreeView(TextureTreeViewState state, TextureColumnHeaderState headerState)
-        //: base(state, new TextureColumnHeader(new TextureColumnHeaderState(headerColumns)))
-        //: base(state, new TextureColumnHeader(headerState))
         : base(new TextureTreeViewState(), new TextureColumnHeader(headerState))
         {
             showAlternatingRowBackgrounds = true; // 背景のシマシマを表示
@@ -198,11 +189,6 @@ namespace TextureTool
         ***********************************************************************************/
         protected override bool DoesItemMatchSearch(TreeViewItem item, string search)
         {
-            //if (!string.IsNullOrEmpty(search) && !base.DoesItemMatchSearch(item, search))
-            //{
-            //    return false;
-            //}
-
             // 列に入力された検索文字をつかって絞り込み
             var textureItem = item as TextureTreeViewItem;
             var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
@@ -216,13 +202,10 @@ namespace TextureTool
         {
             get
             {
-                //if (!string.IsNullOrEmpty(searchString)) { return true; }
-
                 var textureHeaderState = this.multiColumnHeader.state as TextureColumnHeaderState;
                 for (int i = 0; i < ToolConfig.HeaderColumnNum; i++)
                 {
                     if (!textureHeaderState.SearchStates[i].HasValue) { return true; }
-                    //if (!string.IsNullOrEmpty(textureHeaderState.SearchStrings[i])) { return true; }
                 }
                 return false;
             }

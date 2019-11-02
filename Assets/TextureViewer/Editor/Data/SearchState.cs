@@ -9,62 +9,60 @@ namespace TextureTool
     using System;
     using UnityEditor;
 
-    internal enum EMaxTextureSize
-    {
-        _32,
-        _64,
-        _128,
-        _256,
-        _512,
-        _1024,
-        _2048,
-        _4096,
-        _8192,
-        Other,
-    }
-
     [System.Serializable]
     internal class SearchState
     {
-        public string stringValue = "";
-        public int filterValue = 0;
+        [System.NonSerialized] public int searchFilter = -1;
+        public string searchString = "";
+        public bool HasValue => !string.IsNullOrEmpty(searchString);
 
-        public bool HasValue => !string.IsNullOrEmpty(stringValue);
+        /** ********************************************************************************
+        * @summary フィルタリングのリセット
+        ***********************************************************************************/
+        public void ResetSearch()
+        {
+            searchString = ""; 
+            searchFilter = -1; // everything
+        }
 
         /** ********************************************************************************
         * @summary フィルタリングにマッチするか判定
         ***********************************************************************************/
         public bool DoesItemMatch(EHeaderColumnId headerId, TextureTreeElement element)
         {
-            int typeAsBit = 0;
+            int typeAsBit = -1;
             var textureImporter = element.TextureImporter;
             var texture = element.Texture;
             switch (headerId)
             {
                 case EHeaderColumnId.TextureName:
-                    return DoesStringMatch(stringValue, element.Texture.name);
+                    return DoesStringMatch(searchString, element.Texture.name);
                 case EHeaderColumnId.TextureType:
-                    typeAsBit = TypeBitConverter.ConvertTextureImpoterType(textureImporter.textureType);
-                    return (filterValue | typeAsBit) > 0;
+                    typeAsBit = (int)TypeBitConverter.ConvertTextureImpoterType(textureImporter.textureType);
+                    break;
                 case EHeaderColumnId.NPot:
-                    typeAsBit = TypeBitConverter.ConvertTextureImporterNPOTScale(textureImporter.npotScale);
-                    return (filterValue | typeAsBit) > 0;
+                    typeAsBit = (int)TypeBitConverter.ConvertTextureImporterNPOTScale(textureImporter.npotScale);
+                    break;
                 case EHeaderColumnId.MaxSize:
-                    typeAsBit = TypeBitConverter.ConvertMaxTextureSize(textureImporter.maxTextureSize);
-                    return (filterValue | typeAsBit) > 0;
+                    typeAsBit = (int)TypeBitConverter.ConvertMaxTextureSize(textureImporter.maxTextureSize);
+                    break;
                 case EHeaderColumnId.GenerateMips:
-                    typeAsBit = TypeBitConverter.ConvertMipMapEnabled(textureImporter.mipmapEnabled);
-                    return (filterValue | typeAsBit) > 0;
+                    typeAsBit = (int)TypeBitConverter.ConvertMipMapEnabled(textureImporter.mipmapEnabled);
+                    break;
                 case EHeaderColumnId.AlphaIsTransparency:
-                    typeAsBit = TypeBitConverter.ConvertAlphaIsTransparency(textureImporter.alphaIsTransparency);
-                    return (filterValue | typeAsBit) > 0;
+                    typeAsBit = (int)TypeBitConverter.ConvertAlphaIsTransparency(textureImporter.alphaIsTransparency);
+                    break;
                 case EHeaderColumnId.TextureSize:
+                    return DoesStringMatch(searchString, element.Texture.name);
                 case EHeaderColumnId.DataSize:
-                    return DoesStringMatch(stringValue, element.Texture.name);
+                    typeAsBit = (int)TypeBitConverter.ConvertDataSizeUnit(element.TextureByteLength);
+                    //return DoesSizeMatch(unit, element.TextureByteLength);
+                    break;
                 default:
                     return true;
             }
 
+            return (searchFilter & typeAsBit) > 0;
         }
 
         /** ********************************************************************************
@@ -78,12 +76,6 @@ namespace TextureTool
             return displayText.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        /** ********************************************************************************
-        * @summary フィルタリングにマッチするか判定
-        ***********************************************************************************/
-        private bool DoesFilterMatch(string searchString, string displayText)
-        {
-            return displayText.IndexOf(searchString, StringComparison.OrdinalIgnoreCase) >= 0;
-        }
+
     }
 }

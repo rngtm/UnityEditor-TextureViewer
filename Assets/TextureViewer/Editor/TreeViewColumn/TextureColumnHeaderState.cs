@@ -11,9 +11,8 @@ namespace TextureTool
     ***********************************************************************************/
     internal class TextureColumnHeaderState : MultiColumnHeaderState
     {
-        public ColumnSearchField[] SearchFields { get; private set; }
-        //public string[] SearchStrings { get; private set; } // 検索テキスト]
-        public SearchState[] SearchStates { get; private set; }
+        public ColumnSearchField[] SearchFields { get; private set; } // 検索ボックス
+        public SearchState[] SearchStates { get; private set; } // 検索の状態
 
         /** ********************************************************************************
         * @summary コンストラクタ
@@ -26,6 +25,17 @@ namespace TextureTool
             for (int i = 0; i < columns.Length; i++)
             {
                 SearchFields[i] = new ColumnSearchField();
+            }
+        }
+
+        /** ********************************************************************************
+        * @summary フィルタリングのリセット
+        ***********************************************************************************/
+        public void ResetSearch()
+        {
+            foreach (var state in SearchStates)
+            {
+                state.ResetSearch();
             }
         }
     }

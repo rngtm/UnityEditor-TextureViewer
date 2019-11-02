@@ -77,9 +77,9 @@ namespace TextureTool
                         case int len when len > ToolConfig.RedDataSize:
                             labelStyle = MyStyle.RedLabel;
                             break;
-                        case int len when len > ToolConfig.YellowDataSize:
-                            labelStyle = MyStyle.YellowLabel;
-                            break;
+                        //case int len when len > ToolConfig.YellowDataSize:
+                        //    labelStyle = MyStyle.YellowLabel;
+                        //    break;
                         default:
                             labelStyle = MyStyle.DefaultLabel;
                             break;
@@ -206,10 +206,7 @@ namespace TextureTool
         private bool DoesItemMatchSearchInternal(SearchState[] searchStates, int columnIndex)
         {
             var searchState = searchStates[columnIndex];
-            if (!searchState.HasValue) { return true; }
-
-            //string displayText = GetDisplayText((EHeaderColumnId)columnIndex);
-            //if (string.IsNullOrEmpty(displayText)) { return true; }
+            //if (!searchState.HasValue) { return true; }
 
             return searchState.DoesItemMatch((EHeaderColumnId)columnIndex, this);
         }
