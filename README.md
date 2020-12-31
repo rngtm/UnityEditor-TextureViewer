@@ -3,6 +3,11 @@ Texture Viewer is a tool to view Textures in your Unity project.
 
 <img src = "images/overview.png">
 
+## Git URL (Unity Package Manager)
+https://github.com/rngtm/UnityEditor-TextureViewer.git?path=Assets/TextureViewer
+
+<br>
+
 # How to use
 
 ## How to open 
