@@ -1,0 +1,13 @@
+{
+    "name": "com.rngtm.texture-viewer",
+    "displayName": "Texture Viewer", 
+    "version": "1.0.0",               
+    "unity": "2021.1",
+    "description": "Texture Viewer is a tool to view Textures in your Unity project.",
+    "author": {
+        "name": "r-ngtm",
+        "url": "https://github.com/rngtm"
+    },
+    "dependencies": {
+    }
+}
